@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>同人誌・グッズ 利益計算ツール｜BOOTH手数料・印刷費・損益分岐</title>
+<meta name="description" content="BOOTHの手数料と受取金額、同人誌・グッズの印刷費から利益と損益分岐部数をかんたんに計算できる無料ツール。即売会とBOOTH通販の両方に対応。">
+<meta property="og:title" content="同人誌・グッズ 利益計算ツール">
+<meta property="og:description" content="BOOTH手数料・印刷費・イベント参加費から、利益と何部売れば黒字かを自動計算。">
+<style>
+:root{
+  --bg:#f4f7fc; --card:#ffffff; --text:#1f2933; --muted:#5f6b7a; --line:#d8e0ea;
+  --main:#2b6cb0; --main-weak:#e8eef7; --good:#2f855a; --bad:#c53030; --input:#fffdf3;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11161d; --card:#1a212b; --text:#e6ebf1; --muted:#9aa7b6; --line:#2d3743;
+    --main:#63a4e8; --main-weak:#1f2d3d; --good:#68d391; --bad:#fc8181; --input:#222a35;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11161d; --card:#1a212b; --text:#e6ebf1; --muted:#9aa7b6; --line:#2d3743;
+  --main:#63a4e8; --main-weak:#1f2d3d; --good:#68d391; --bad:#fc8181; --input:#222a35;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font-family:"Hiragino Sans","Yu Gothic UI","Meiryo",system-ui,sans-serif;line-height:1.7}
+header{background:var(--main);color:#fff;padding:28px 16px 22px}
+header .wrap{max-width:860px;margin:0 auto}
+header h1{margin:0;font-size:clamp(22px,4.5vw,30px);line-height:1.35}
+header p{margin:6px 0 0;opacity:.9;font-size:14px}
+main{max-width:860px;margin:0 auto;padding:20px 16px 48px}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{flex:1 1 200px;padding:12px;border:2px solid var(--main);background:var(--card);
+  color:var(--main);font-weight:700;border-radius:10px;cursor:pointer;font-size:15px}
+.tabs button[aria-selected="true"]{background:var(--main);color:#fff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+.card h2{margin:0 0 4px;font-size:19px;color:var(--main)}
+.card .lead{margin:0 0 14px;color:var(--muted);font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px}
+label{display:block;font-size:13px;font-weight:700}
+label small{font-weight:400;color:var(--muted)}
+.field{display:flex;align-items:center;gap:6px;margin-top:4px}
+input{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--input);
+  color:var(--text);font-size:16px;text-align:right}
+.unit{color:var(--muted);font-size:13px;min-width:2em}
+fieldset{border:1px dashed var(--line);border-radius:10px;padding:12px 14px 14px;margin:14px 0 0}
+legend{font-size:13px;font-weight:700;color:var(--main);padding:0 6px}
+.result{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin-top:16px}
+.stat{background:var(--main-weak);border-radius:10px;padding:12px 14px}
+.stat .k{font-size:12px;color:var(--muted)}
+.stat .v{font-size:24px;font-weight:800;font-variant-numeric:tabular-nums}
+.stat.big .v{font-size:30px}
+.good{color:var(--good)} .bad{color:var(--bad)}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+table{width:100%;border-collapse:collapse;margin-top:12px;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{border-bottom:1px solid var(--line);padding:7px 6px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.cta{border:2px solid var(--main);}
+.cta a{display:inline-block;margin-top:8px;background:var(--main);color:#fff;text-decoration:none;
+  padding:10px 18px;border-radius:999px;font-weight:700}
+footer{max-width:860px;margin:0 auto;padding:0 16px 32px;font-size:12px;color:var(--muted)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><div class="wrap">
+  <h1>同人誌・グッズ 利益計算ツール</h1>
+  <p>BOOTHの手数料・受取金額と、印刷費から「何部売れば黒字か」を無料で計算できます。</p>
+</div></header>
+
+<main>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true" data-tab="fee">BOOTH手数料・受取金額</button>
+    <button role="tab" aria-selected="false" data-tab="profit">頒布価格・利益シミュレーター</button>
+  </div>
+
+  <!-- BOOTH手数料 -->
+  <section id="tab-fee" class="card">
+    <h2>BOOTH手数料・受取金額の計算</h2>
+    <p class="lead">1回の注文あたりの手数料と、あなたが受け取る金額を計算します。</p>
+    <div class="grid">
+      <div><label for="f-price">商品の価格 <small>（1個）</small></label>
+        <div class="field"><input id="f-price" type="number" inputmode="numeric" value="1000" min="0"><span class="unit">円</span></div></div>
+      <div><label for="f-qty">数量</label>
+        <div class="field"><input id="f-qty" type="number" inputmode="numeric" value="1" min="1"><span class="unit">個</span></div></div>
+      <div><label for="f-ship">送料 <small>（自宅発送で買い手が払う分）</small></label>
+        <div class="field"><input id="f-ship" type="number" inputmode="numeric" value="0" min="0"><span class="unit">円</span></div></div>
+    </div>
+    <fieldset><legend>手数料の設定（変更があったときだけ直してください）</legend>
+      <div class="grid">
+        <div><label for="f-rate">サービス利用料率</label>
+          <div class="field"><input id="f-rate" type="number" step="0.1" value="5.6"><span class="unit">%</span></div></div>
+        <div><label for="f-fixed">1注文あたりの固定料金</label>
+          <div class="field"><input id="f-fixed" type="number" value="45"><span class="unit">円</span></div></div>
+      </div>
+    </fieldset>
+    <div class="result">
+      <div class="stat"><div class="k">買い手の支払額</div><div class="v" id="r-pay">-</div></div>
+      <div class="stat"><div class="k">BOOTH手数料</div><div class="v" id="r-fee">-</div></div>
+      <div class="stat big"><div class="k">あなたの受取金額</div><div class="v good" id="r-recv">-</div></div>
+      <div class="stat"><div class="k">手数料の割合</div><div class="v" id="r-feepct">-</div></div>
+    </div>
+    <table aria-label="価格別の受取金額">
+      <thead><tr><th>価格（1個・送料なし）</th><th>手数料</th><th>受取金額</th></tr></thead>
+      <tbody id="r-table"></tbody>
+    </table>
+    <p class="note">※サービス利用料は「(価格＋送料)×料率（1円未満切り捨て）＋固定料金」で計算しています（2026年10月時点の料率を初期値にしています）。最新の料金はBOOTH公式ヘルプでご確認ください。売上金の振込手数料は含みません。</p>
+  </section>
+
+  <!-- 利益シミュレーター -->
+  <section id="tab-profit" class="card" hidden>
+    <h2>頒布価格・利益シミュレーター</h2>
+    <p class="lead">印刷費・イベント参加費と、イベント／BOOTHで売れる見込み部数から、利益と損益分岐を計算します。</p>
+    <fieldset><legend>作る</legend>
+      <div class="grid">
+        <div><label for="p-print">印刷・製作費 <small>（総額）</small></label>
+          <div class="field"><input id="p-print" type="number" inputmode="numeric" value="60000"><span class="unit">円</span></div></div>
+        <div><label for="p-copies">作る部数</label>
+          <div class="field"><input id="p-copies" type="number" inputmode="numeric" value="100"><span class="unit">部</span></div></div>
+        <div><label for="p-other">その他の制作費 <small>（素材・外注など）</small></label>
+          <div class="field"><input id="p-other" type="number" inputmode="numeric" value="0"><span class="unit">円</span></div></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>イベントで売る</legend>
+      <div class="grid">
+        <div><label for="p-eprice">頒布価格</label>
+          <div class="field"><input id="p-eprice" type="number" inputmode="numeric" value="1000"><span class="unit">円</span></div></div>
+        <div><label for="p-esold">売れる見込み</label>
+          <div class="field"><input id="p-esold" type="number" inputmode="numeric" value="50"><span class="unit">部</span></div></div>
+        <div><label for="p-ecost">参加費＋交通費など</label>
+          <div class="field"><input id="p-ecost" type="number" inputmode="numeric" value="12000"><span class="unit">円</span></div></div>
+      </div>
+    </fieldset>
+    <fieldset><legend>BOOTHで売る</legend>
+      <div class="grid">
+        <div><label for="p-bprice">販売価格</label>
+          <div class="field"><input id="p-bprice" type="number" inputmode="numeric" value="1200"><span class="unit">円</span></div></div>
+        <div><label for="p-bsold">売れる見込み <small>（1注文1部で計算）</small></label>
+          <div class="field"><input id="p-bsold" type="number" inputmode="numeric" value="20"><span class="unit">部</span></div></div>
+        <div><label for="p-bship">発送にかかる実費 <small>（1部・梱包材込み）</small></label>
+          <div class="field"><input id="p-bship" type="number" inputmode="numeric" value="0"><span class="unit">円</span></div></div>
+      </div>
+    </fieldset>
+    <div class="result">
+      <div class="stat big"><div class="k">利益</div><div class="v" id="q-profit">-</div></div>
+      <div class="stat"><div class="k">売上合計（受取ベース）</div><div class="v" id="q-sales">-</div></div>
+      <div class="stat"><div class="k">費用合計</div><div class="v" id="q-cost">-</div></div>
+      <div class="stat"><div class="k">1部あたりの原価</div><div class="v" id="q-unit">-</div></div>
+      <div class="stat"><div class="k">黒字になる部数 <small>（イベント価格で）</small></div><div class="v" id="q-be">-</div></div>
+      <div class="stat"><div class="k">売れ残り</div><div class="v" id="q-left">-</div></div>
+    </div>
+    <p class="note" id="q-msg"></p>
+    <p class="note">※BOOTH分は上のタブと同じ手数料（5.6%＋45円／注文）で受取額を計算しています。売れ残りの原価は、確定申告では「期末の在庫」として扱います。</p>
+  </section>
+
+  <section class="card cta">
+    <h2>確定申告まで、まとめて自動で</h2>
+    <p class="lead" style="margin-bottom:0">BOOTHの売上CSVを貼るだけで、月別の売上・手数料から確定申告の数字まで自動集計するExcelシートを配布しています。無料お試し版もあります。</p>
+    <a id="cta-link" href="#" target="_blank" rel="noopener">BOOTHで見る</a>
+  </section>
+</main>
+
+<footer>
+  計算結果は目安です。税務上の判断は税務署・税理士にご確認ください。入力した数字はこの端末の中だけで計算され、どこにも送信されません。<br>
+  運営：株式会社256
+</footer>
+
+<script>
+const BOOTH_URL = "#"; // ショップ公開後にURLを入れる
+document.getElementById("cta-link").href = BOOTH_URL;
+
+const $ = id => document.getElementById(id);
+const n = id => Math.max(0, Number($(id).value) || 0);
+const yen = v => (v < 0 ? "-" : "") + "¥" + Math.abs(Math.round(v)).toLocaleString("ja-JP");
+
+function boothFee(amount) {
+  const rate = (Number($("f-rate").value) || 0) / 100;
+  const fixed = Number($("f-fixed").value) || 0;
+  return amount > 0 ? Math.floor(amount * rate) + fixed : 0;
+}
+
+function calcFee() {
+  const pay = n("f-price") * Math.max(1, n("f-qty")) + n("f-ship");
+  const fee = boothFee(pay);
+  $("r-pay").textContent = yen(pay);
+  $("r-fee").textContent = yen(fee);
+  $("r-recv").textContent = yen(pay - fee);
+  $("r-feepct").textContent = pay ? (fee / pay * 100).toFixed(1) + "%" : "-";
+  $("r-table").innerHTML = [300, 500, 800, 1000, 1500, 2000, 3000, 5000].map(p => {
+    const f = boothFee(p);
+    return `<tr><td>${yen(p)}</td><td>${yen(f)}</td><td>${yen(p - f)}</td></tr>`;
+  }).join("");
+}
+
+function calcProfit() {
+  const copies = n("p-copies");
+  const make = n("p-print") + n("p-other");
+  const eSold = n("p-esold"), bSold = n("p-bsold");
+  const eSales = n("p-eprice") * eSold;
+  const bRecvEach = n("p-bprice") - boothFee(n("p-bprice"));
+  const bSales = bRecvEach * bSold;
+  const cost = make + n("p-ecost") + n("p-bship") * bSold;
+  const profit = eSales + bSales - cost;
+  const left = copies - eSold - bSold;
+  $("q-sales").textContent = yen(eSales + bSales);
+  $("q-cost").textContent = yen(cost);
+  $("q-profit").textContent = yen(profit);
+  $("q-profit").className = "v " + (profit >= 0 ? "good" : "bad");
+  $("q-unit").textContent = copies ? yen(make / copies) : "-";
+  const price = n("p-eprice");
+  const fixed = make + n("p-ecost");
+  $("q-be").textContent = price ? Math.ceil(fixed / price).toLocaleString() + "部" : "-";
+  $("q-left").textContent = left >= 0 ? left + "部" : "部数不足";
+  $("q-left").className = "v " + (left < 0 ? "bad" : "");
+  $("q-msg").textContent = left < 0
+    ? "⚠ 売れる見込みの合計が、作る部数を超えています。"
+    : (profit >= 0 ? "黒字の見込みです。" : `あと ${yen(-profit)} で黒字です。`);
+}
+
+document.querySelectorAll("input").forEach(el => el.addEventListener("input", () => { calcFee(); calcProfit(); }));
+document.querySelectorAll(".tabs button").forEach(btn => btn.addEventListener("click", () => {
+  document.querySelectorAll(".tabs button").forEach(b => b.setAttribute("aria-selected", b === btn));
+  $("tab-fee").hidden = btn.dataset.tab !== "fee";
+  $("tab-profit").hidden = btn.dataset.tab !== "profit";
+}));
+calcFee(); calcProfit();
+</script>
+</body>
+</html>
